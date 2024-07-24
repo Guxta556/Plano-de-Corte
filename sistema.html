@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Cutting Plan Optimizer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1>Cutting Plan Optimizer</h1>
+  <form id="cutting-form">
+    <div class="form-section">
+      <label for="sheet-width">Largura da chapa (cm):</label>
+      <input type="number" id="sheet-width" value="100" step="0.1">
+    </div>
+    <div class="form-section">
+      <label for="sheet-height">Altura da chapa (cm):</label>
+      <input type="number" id="sheet-height" value="100" step="0.1">
+    </div>
+    <div class="form-section">
+      <label for="border-thickness">Espessura da borda (cm):</label>
+      <input type="number" id="border-thickness" value="0.2" step="0.1">
+    </div>
+    <h2 class="section-title">Adicionar Recorte</h2>
+    <div class="form-section">
+      <label for="cut-name">Nome do recorte:</label>
+      <input type="text" id="cut-name">
+    </div>
+    <div class="form-section">
+      <label for="cut-length">Largura do recorte (cm):</label>
+      <input type="number" id="cut-length" step="0.1">
+    </div>
+    <div class="form-section">
+      <label for="cut-width">Altura do recorte (cm):</label>
+      <input type="number" id="cut-width" step="0.1">
+    </div>
+    <div class="form-section">
+      <label for="cut-quantity">Quantidade:</label>
+      <input type="number" id="cut-quantity" value="1">
+    </div>
+    <div class="button-group">
+      <button type="button" id="add-item">Adicionar Item</button>
+      <button type="submit">Gerar Plano de Corte</button>
+      <button type="button" id="download">Baixar Plano e Relatório</button>
+    </div>
+    <ul id="cut-list"></ul>
+  </form>
+  <canvas id="canvas" width="1000" height="1000"></canvas>
+
+  <script>
+    let sheetWidth = 100; // em cm
+    let sheetHeight = 100; // em cm
+    let borderThickness = 0.2; // em cm
+    let cuts = [];
+    let ctx;
+    const CM_TO_PX = 10; // Conversão de centímetros para pixels
+
+    document.addEventListener("DOMContentLoaded", function() {
+      ctx = document.getElementById('canvas').getContext('2d');
+    });
+
+    // Função para adicionar um novo recorte
+    function addCut() {
+      let cutName = document.getElementById('cut-name').value;
+      let cutLength = parseFloat(document.getElementById('cut-length').value);
+      let cutWidth = parseFloat(document.getElementById('cut-width').value);
+      let cutQuantity = parseInt(document.getElementById('cut-quantity').value);
+
+      for (let i = 0; i < cutQuantity; i++) {
+        cuts.push({ name: cutName, length: cutLength, width: cutWidth, quantity: cutQuantity });
+      }
+
+      updateCutList();
+    }
+
+    // Função para atualizar a lista de recortes
+    function updateCutList() {
+      let cutList = document.getElementById('cut-list');
+      cutList.innerHTML = '';
+
+      cuts.forEach((cut) => {
+        let listItem = document.createElement('li');
+        listItem.textContent = `${cut.name} - ${cut.length}x${cut.width} - Quantidade: ${cut.quantity}`;
+        cutList.appendChild(listItem);
+      });
+    }
+
+    // Função para organizar os recortes na chapa
+    function organizeCuts() {
+      // Ordenar os recortes por área decrescente
+      cuts.sort((a, b) => b.length * b.width - a.length * a.width);
+
+      // Inicializar a posição do recorte atual
+      let x = 0;
+      let y = 0;
+
+      // Armazenar as áreas
+      let totalCutArea = 0;
+      let totalRemainingArea = sheetWidth * sheetHeight;
+
+      // Iterar sobre os recortes e organizar na chapa
+      cuts.forEach((cut) => {
+        let adjustedLength = cut.length + borderThickness;
+        let adjustedWidth = cut.width + borderThickness;
+
+        // Verificar se o recorte cabe na chapa na posição atual
+        if (x + adjustedLength <= sheetWidth && y + adjustedWidth <= sheetHeight) {
+          // Desenhar o recorte na chapa
+          drawCut(x, y, cut.length, cut.width, cut.name);
+          // Atualizar a posição do recorte atual
+          x += adjustedLength;
+          totalCutArea += cut.length * cut.width * cut.quantity;
+        } else {
+          // Se não couber, ir para a próxima linha
+          x = 0;
+          y += adjustedWidth;
+          // Verificar se o recorte cabe na chapa na nova posição
+          if (x + adjustedLength <= sheetWidth && y + adjustedWidth <= sheetHeight) {
+            // Desenhar o recorte na chapa
+            drawCut(x, y, cut.length, cut.width, cut.name);
+            // Atualizar a posição do recorte atual
+            x += adjustedLength;
+            totalCutArea += cut.length * cut.width * cut.quantity;
+          } else {
+            // Se não couber, alertar que não há espaço na chapa
+            alert(`Não há espaço na chapa para o recorte ${cut.name} considerando a espessura da borda!`);
+          }
+        }
+      });
+
+      totalRemainingArea -= totalCutArea;
+      return { totalCutArea, totalRemainingArea };
+    }
+
+    // Função para desenhar um recorte na chapa
+    function drawCut(x, y, length, width, name) {
+      ctx.fillStyle = 'blue';
+      ctx.fillRect(x * CM_TO_PX, y * CM_TO_PX, length * CM_TO_PX, width * CM_TO_PX);
+      ctx.strokeStyle = 'red';  // Cor da borda
+      ctx.lineWidth = borderThickness * CM_TO_PX; // Converte cm para pixels
+      ctx.strokeRect(x * CM_TO_PX, y * CM_TO_PX, length * CM_TO_PX, width * CM_TO_PX);
+
+      // Adicionar texto ao recorte
+      ctx.font = '24px serif';
+      ctx.fillStyle = 'black';
+      ctx.fillText(name, x * CM_TO_PX + 5, y * CM_TO_PX + 25);
+    }
+
+    // Função para gerar o relatório e baixar a imagem
+    function generateReportAndDownload() {
+      let { totalCutArea, totalRemainingArea } = organizeCuts();
+
+      // Baixar imagem
+      let canvas = document.getElementById('canvas');
+      let imageUrl = canvas.toDataURL('image/png');
+      let link = document.createElement('a');
+      link.href = imageUrl;
+      link.download = 'plano_de_corte.png';
+      link.click();
+
+      // Gerar relatório CSV
+      let csvContent = "data:text/csv;charset=utf-8,";
+
+      // Cabeçalhos
+      csvContent += "Relatório de Recortes\n\n";
+
+      // Informações da chapa
+      csvContent += `Largura da Chapa (cm),${sheetWidth}\n`;
+      csvContent += `Altura da Chapa (cm),${sheetHeight}\n`;
+      csvContent += `Espessura da Borda (cm),${borderThickness}\n\n`;
+
+      // Cabeçalhos dos recortes
+      csvContent += "Nome do Recorte,Largura (cm),Altura (cm),Quantidade,Área Total (cm²)\n";
+
+      // Detalhes dos recortes
+      cuts.forEach(cut => {
+        let area = cut.length * cut.width;
+        csvContent += `${cut.name},${cut.length},${cut.width},${cut.quantity},${area * cut.quantity}\n`;
+      });
+
+      // Área total
+      csvContent += `\nÁrea Total Recortada (cm²),${totalCutArea}\n`;
+      csvContent += `Área Total de Sobra (cm²),${totalRemainingArea}\n`;
+
+      // Gerar e baixar o arquivo CSV
+      let encodedUri = encodeURI(csvContent);
+      let csvLink = document.createElement('a');
+      csvLink.setAttribute('href', encodedUri);
+      csvLink.setAttribute('download', 'relatorio_recortes.csv');
+      csvLink.click();
+    }
+
+    // Adicionar evento de click ao botão "Adicionar Item"
+    document.getElementById('add-item').addEventListener('click', addCut);
+
+    // Adicionar evento de submit ao formulário
+    document.getElementById('cutting-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      sheetWidth = parseFloat(document.getElementById('sheet-width').value);
+      sheetHeight = parseFloat(document.getElementById('sheet-height').value);
+      borderThickness = parseFloat(document.getElementById('border-thickness').value);
+      document.getElementById('canvas').width = sheetWidth * CM_TO_PX;
+      document.getElementById('canvas').height = sheetHeight * CM_TO_PX;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'gray';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      organizeCuts();
+    });
+
+    // Adicionar evento de click ao botão "Baixar Plano e Relatório"
+    document.getElementById('download').addEventListener('click', generateReportAndDownload);
+  </script>
+</body>
+</html>
