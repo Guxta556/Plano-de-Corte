@@ -314,44 +314,39 @@
       return totalLength;
     }
 
-    // Função para baixar o plano e o relatório
-    function downloadReport() {
-      // Gerar e baixar o relatório
-      let report = '';
-      let totalCutArea = 0;
-      let totalBorderLength = 0;
-      
-      cuts.forEach(cut => {
-        report += `${cut.name} - ${cut.length}x${cut.width} - ${cut.color} - Bordas: ${cut.borders.join(', ')}\n`;
-        totalCutArea += cut.length * cut.width;
-        if (cut.borderTape) {
-          for (let border of cut.borders) {
-            switch (border) {
-              case 'top':
-              case 'bottom':
-                totalBorderLength += cut.length;
-                break;
-              case 'left':
-              case 'right':
-                totalBorderLength += cut.width;
-                break;
-            }
-          }
-        }
-      });
+    // Função para gerar o relatório e baixar a imagem
+    function generateReportAndDownload() {
+      let { totalCutArea, totalRemainingArea, totalBorderTapeLength } = organizeCuts();
 
-      report += `\nÁrea Total Cortada: ${totalCutArea} cm²`;
-      report += `\nComprimento Total da Fita de Borda: ${totalBorderLength} cm`;
+      // Baixar imagem
+      let canvas = document.getElementById('canvas');
+      let imageUrl = canvas.toDataURL('image/png');
+      let link = document.createElement('a');
+      link.href = imageUrl;
+      link.download = 'plano_de_corte.png';
+      link.click();
 
-      // Criar um arquivo de texto para download
-      let blob = new Blob([report], { type: 'text/plain' });
-      let url = URL.createObjectURL(blob);
-      let a = document.createElement('a');
-      a.href = url;
-      a.download = 'relatorio_corte.txt';
-      a.click();
-      URL.revokeObjectURL(url);
+      // Gerar relatório
+      let report = `Área Total dos Recortes: ${totalCutArea.toFixed(2)} cm²\n`;
+      report += `Área Restante da Chapa: ${totalRemainingArea.toFixed(2)} cm²\n`;
+      report += `Comprimento Total da Fita de Borda: ${totalBorderTapeLength.toFixed(2)} cm\n`;
+
+      let reportBlob = new Blob([report], { type: 'text/plain' });
+      let reportLink = document.createElement('a');
+      reportLink.href = URL.createObjectURL(reportBlob);
+      reportLink.download = 'relatorio_de_corte.txt';
+      reportLink.click();
     }
+
+
+    // Configura os eventos dos botões
+    document.getElementById('add-item').addEventListener('click', addCut);
+    document.getElementById('cutting-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      organizeCuts();
+    });
+
+
 
     document.getElementById('add-item').addEventListener('click', addCut);
     document.getElementById('cutting-form').addEventListener('submit', function(event) {
