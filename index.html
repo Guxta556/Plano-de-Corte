@@ -60,6 +60,8 @@
   </form>
   <canvas id="canvas" width="1000" height="1000"></canvas>
 
+
+
   <script>
     let sheetWidth = 100; // em cm
     let sheetHeight = 100; // em cm
@@ -70,17 +72,6 @@
 
     document.addEventListener("DOMContentLoaded", function() {
       ctx = document.getElementById('canvas').getContext('2d');
-    });
-
-    document.getElementById('border-tape').addEventListener('change', function() {
-      const borderSelector = document.getElementById('border-selector');
-      borderSelector.style.display = this.checked ? 'grid' : 'none';
-    });
-
-    document.querySelectorAll('.border-selector div').forEach(div => {
-      div.addEventListener('click', function() {
-        this.classList.toggle('selected');
-      });
     });
 
     // Função para adicionar um novo recorte
@@ -115,6 +106,7 @@
       });
     }
 
+    
     // Função para organizar os recortes na chapa
     function organizeCuts() {
       // Ordenar os recortes por área decrescente
@@ -160,19 +152,6 @@
       for (let y = 0; y <= sheetHeight - cut.width; y += 0.1) {
         for (let x = 0; x <= sheetWidth - cut.length; x += 0.1) {
           if (isPositionValid(x, y, cut.length, cut.width, occupiedSpaces)) {
-            return { x: x, y: y };
-          }
-        }
-      }
-      return null;
-    }
-
-
-    // Função para encontrar a posição para o recorte
-    function findPositionForCut(cut, occupiedSpaces) {
-      for (let y = 0; y <= sheetHeight - cut.width; y += 0.1) {
-        for (let x = 0; x <= sheetWidth - cut.length; x += 0.1) {
-          if (isPositionValid(x, y, cut.length, cut.width, occupiedSpaces)) {
             return { x: x, y: y, rotated: false };
           } else if (isPositionValid(x, y, cut.width, cut.length, occupiedSpaces)) {
             // Tentar a rotação
@@ -183,26 +162,53 @@
       return null;
     }
 
-    // Função para verificar se a posição é válida
-    function isPositionValid(x, y, length, width, occupiedSpaces) {
-      for (let space of occupiedSpaces) {
-        if (x < space.x + space.width && x + length > space.x &&
-            y < space.y + space.height && y + width > space.y) {
-          return false;
-        }
-      }
-      return x + length <= sheetWidth && y + width <= sheetHeight;
-    }
 
     // Função para verificar se a posição é válida
     function isPositionValid(x, y, cutLength, cutWidth, occupiedSpaces) {
       for (let space of occupiedSpaces) {
-        if (!(x + cutLength + borderThickness <= space.x || x >= space.x + space.width || y + cutWidth + borderThickness <= space.y || y >= space.y + space.height)) {
-          return false;
+        // Ajuste a verificação da posição se a espessura da borda for zero
+        if (borderThickness > 0) {
+          if (!(x + cutLength + borderThickness <= space.x || 
+                x >= space.x + space.width || 
+                y + cutWidth + borderThickness <= space.y || 
+                y >= space.y + space.height)) {
+            return false;
+          }
+        } else {
+          if (!(x + cutLength <= space.x || 
+                x >= space.x + space.width || 
+                y + cutWidth <= space.y || 
+                y >= space.y + space.height)) {
+            return false;
+          }
         }
       }
       return true;
     }
+
+    
+    /*
+    // Função para desenhar um recorte na chapa
+    function drawCut(x, y, length, width, name) {
+      ctx.fillStyle = document.getElementById('cut-color').value; // Usa a cor selecionada
+      ctx.fillRect(x * CM_TO_PX, y * CM_TO_PX, length * CM_TO_PX, width * CM_TO_PX);
+
+      if (borderThickness > 0) {
+        ctx.strokeStyle = 'red'; // Cor da borda
+        ctx.lineWidth = borderThickness * CM_TO_PX; // Converte cm para pixels
+        ctx.strokeRect(x * CM_TO_PX, y * CM_TO_PX, length * CM_TO_PX, width * CM_TO_PX);
+      }
+
+      // Adicionar texto ao recorte
+      ctx.font = '24px serif';
+      ctx.fillStyle = 'black';
+      ctx.fillText(name, x * CM_TO_PX + 5, y * CM_TO_PX + 25);
+    }
+
+    let borderTapes = {}; // Armazena as bordas para fita de borda selecionadas
+    let borderTapeLengths = {}; // Armazena o comprimento total da fita de borda para cada recorte
+    */
+
 
     // Função para desenhar um recorte na chapa
     function drawCut(x, y, length, width, name, color, borderTape, borders) {
@@ -244,6 +250,68 @@
           }
         });
       }
+    }
+
+
+    // Função para configurar o seletor de bordas
+    function setupBorderSelector() {
+      const borderSelector = document.getElementById('border-selector');
+      const borderTapeCheckbox = document.getElementById('border-tape');
+
+      borderTapeCheckbox.addEventListener('change', (e) => {
+        borderSelector.style.display = e.target.checked ? 'flex' : 'none';
+      });
+
+      borderSelector.addEventListener('click', (e) => {
+        if (e.target.dataset.border) {
+          const border = e.target.dataset.border;
+          const isSelected = e.target.classList.toggle('selected');
+
+          if (isSelected) {
+            addBorderTape();
+          } else {
+            const cutName = document.getElementById('cut-name').value;
+            borderT
+            borderTapes[cutName].delete(border);
+            updateBorderSelectorStyles();
+          }
+        }
+      });
+    }
+
+    // Função para adicionar fita de borda
+    function addBorderTape() {
+      const cutName = document.getElementById('cut-name').value;
+      const border = document.getElementById('border-selector').querySelector('.selected').dataset.border;
+
+      if (!borderTapes[cutName]) {
+        borderTapes[cutName] = new Set();
+      }
+
+      borderTapes[cutName].add(border);
+
+      updateBorderSelectorStyles();
+    }
+
+    // Função para calcular o comprimento total da fita de borda
+    function calculateTotalBorderTapeLength() {
+      let totalLength = 0;
+
+      for (let cut of cuts) {
+        const borders = borderTapes[cut.name] || new Set();
+        let length = 0;
+
+        // Calcula o comprimento da fita de borda para o recorte atual
+        if (borders.has('top')) length += cut.length;
+        if (borders.has('bottom')) length += cut.length;
+        if (borders.has('left')) length += cut.width;
+        if (borders.has('right')) length += cut.width;
+
+        borderTapeLengths[cut.name] = length;
+        totalLength += length;
+      }
+
+      return totalLength;
     }
 
     // Função para baixar o plano e o relatório
@@ -292,7 +360,28 @@
       alert(`Área Total Cortada: ${totalCutArea} cm²\nÁrea Restante: ${totalRemainingArea} cm²\nComprimento Total da Fita de Borda: ${totalBorderLength} cm`);
     });
 
-    document.getElementById('download').addEventListener('click', downloadReport);
+    // Chame a função de configuração do seletor de bordas
+    setupBorderSelector();
+
+    // Adicionar evento de click ao botão "Adicionar Item"
+    document.getElementById('add-item').addEventListener('click', addCut);
+
+    // Adicionar evento de submit ao formulário
+    document.getElementById('cutting-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      sheetWidth = parseFloat(document.getElementById('sheet-width').value);
+      sheetHeight = parseFloat(document.getElementById('sheet-height').value);
+      borderThickness = parseFloat(document.getElementById('border-thickness').value);
+      document.getElementById('canvas').width = sheetWidth * CM_TO_PX;
+      document.getElementById('canvas').height = sheetHeight * CM_TO_PX;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'gray';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      organizeCuts();
+    });
+
+    // Adicionar evento de click ao botão "Baixar Plano e Relatório"
+    document.getElementById('download').addEventListener('click', generateReportAndDownload);
   </script>
 </body>
 </html>
