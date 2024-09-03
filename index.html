@@ -10,20 +10,20 @@
   <form id="cutting-form">
     <div class="form-section">
       <label for="sheet-width">Largura da chapa (cm):</label>
-      <input type="number" id="sheet-width" value="100" step="0.1">
+      <input type="number" id="sheet-width" value="285" step="0.1">
     </div>
     <div class="form-section">
       <label for="sheet-height">Altura da chapa (cm):</label>
-      <input type="number" id="sheet-height" value="100" step="0.1">
+      <input type="number" id="sheet-height" value="175" step="0.1">
     </div>
     <div class="form-section">
-        <label for="saw-thickness">Espessura da Serra (cm):</label>
-        <input type="number" id="saw-thickness" value="0" step="0.1">
-      </div>
-      <div class="form-section">
-        <label for="use-saw-thickness">Usar Espessura da Serra?</label>
-        <input type="checkbox" id="use-saw-thickness">
-      </div>
+      <label for="saw-thickness">Espessura da Serra (cm):</label>
+      <input type="number" id="saw-thickness" value="0.3" step="0.1">
+    </div>
+    <div class="form-section">
+      <label for="use-saw-thickness">Usar Espessura da Serra?</label>
+      <input type="checkbox" id="use-saw-thickness" checked>
+    </div>
 
     <h2 class="section-title">Adicionar Recorte</h2>
     <div class="form-section">
@@ -59,7 +59,7 @@
     <div class="button-group">
       <button type="button" id="add-item">Adicionar Item</button>
       <button type="submit">Gerar Plano de Corte</button>
-      <button type="button" id="download">Baixar Plano e Relatório</button>
+      <button type="button" id="download">Baixar Plano</button>
       <button type="button" id="reorganize">Reorganizar</button> <!-- Novo botão -->
     </div>
 
