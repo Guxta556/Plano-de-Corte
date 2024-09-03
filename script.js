@@ -478,45 +478,119 @@ function organizeAndDrawCuts() {
   // Opcional: Exibir ou usar o totalRemainingArea e totalBorderLength conforme necessário
 }
 
-// Função para desenhar a régua ao redor da chapa
 function drawRuler() {
-  ctx.strokeStyle = 'black';
-  ctx.lineWidth = 1;
-
-  // Desenhar régua horizontal (superior e inferior)
-  for (let i = 0; i <= sheetWidth; i += 10) {
-      let posX = i * CM_TO_PX;
-      ctx.beginPath();
-      ctx.moveTo(posX, 0);
-      ctx.lineTo(posX, 10);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(posX, sheetHeight * CM_TO_PX);
-      ctx.lineTo(posX, sheetHeight * CM_TO_PX - 10);
-      ctx.stroke();
-
-      ctx.fillText(`${i} cm`, posX, 20);
-      ctx.fillText(`${i} cm`, posX, sheetHeight * CM_TO_PX - 20);
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 1;
+    ctx.font = '25px Arial'; // Ajuste o tamanho da fonte conforme necessário
+    ctx.textBaseline = 'middle';
+  
+    // Desenhar régua horizontal (superior e inferior)
+    for (let i = 0; i <= sheetWidth; i += 1) {
+        let posX = i * CM_TO_PX;
+  
+        // Traços maiores a cada 10cm
+        if (i % 10 === 0) {
+            ctx.beginPath();
+            ctx.moveTo(posX, 0);
+            ctx.lineTo(posX, 10);
+            ctx.stroke();
+  
+            ctx.beginPath();
+            ctx.moveTo(posX, sheetHeight * CM_TO_PX);
+            ctx.lineTo(posX, sheetHeight * CM_TO_PX - 10);
+            ctx.stroke();
+  
+            // Desenhar o texto com contorno branco
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 3;
+            ctx.strokeText(`${i} cm`, posX, 20);
+            ctx.strokeText(`${i} cm`, posX, sheetHeight * CM_TO_PX - 20);
+  
+            // Preencher o texto em preto
+            ctx.fillStyle = 'black';
+            ctx.fillText(`${i} cm`, posX, 20);
+            ctx.fillText(`${i} cm`, posX, sheetHeight * CM_TO_PX - 20);
+  
+        // Traço maior a cada 5cm
+        } else if (i % 5 === 0) {
+            ctx.beginPath();
+            ctx.moveTo(posX, 0);
+            ctx.lineTo(posX, 7);
+            ctx.stroke();
+  
+            ctx.beginPath();
+            ctx.moveTo(posX, sheetHeight * CM_TO_PX);
+            ctx.lineTo(posX, sheetHeight * CM_TO_PX - 7);
+            ctx.stroke();
+        } else {
+            // Traços menores para cada cm
+            ctx.beginPath();
+            ctx.moveTo(posX, 0);
+            ctx.lineTo(posX, 4);
+            ctx.stroke();
+  
+            ctx.beginPath();
+            ctx.moveTo(posX, sheetHeight * CM_TO_PX);
+            ctx.lineTo(posX, sheetHeight * CM_TO_PX - 4);
+            ctx.stroke();
+        }
+    }
+  
+    // Desenhar régua vertical (esquerda e direita)
+    for (let i = 0; i <= sheetHeight; i += 1) {
+        let posY = i * CM_TO_PX;
+  
+        // Traços maiores a cada 10cm
+        if (i % 10 === 0) {
+            ctx.beginPath();
+            ctx.moveTo(0, posY);
+            ctx.lineTo(10, posY);
+            ctx.stroke();
+  
+            ctx.beginPath();
+            ctx.moveTo(sheetWidth * CM_TO_PX, posY);
+            ctx.lineTo(sheetWidth * CM_TO_PX - 10, posY);
+            ctx.stroke();
+  
+            // Desenhar o texto com contorno branco
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 3;
+            ctx.strokeText(`${i} cm`, 20, posY);
+            ctx.strokeText(`${i} cm`, sheetWidth * CM_TO_PX - 20, posY);
+  
+            // Preencher o texto em preto
+            ctx.fillStyle = 'black';
+            ctx.fillText(`${i} cm`, 20, posY);
+            ctx.fillText(`${i} cm`, sheetWidth * CM_TO_PX - 20, posY);
+  
+        // Traço maior a cada 5cm
+        } else if (i % 5 === 0) {
+            ctx.beginPath();
+            ctx.moveTo(0, posY);
+            ctx.lineTo(7, posY);
+            ctx.stroke();
+  
+            ctx.beginPath();
+            ctx.moveTo(sheetWidth * CM_TO_PX, posY);
+            ctx.lineTo(sheetWidth * CM_TO_PX - 7, posY);
+            ctx.stroke();
+        } else {
+            // Traços menores para cada cm
+            ctx.beginPath();
+            ctx.moveTo(0, posY);
+            ctx.lineTo(4, posY);
+            ctx.stroke();
+  
+            ctx.beginPath();
+            ctx.moveTo(sheetWidth * CM_TO_PX, posY);
+            ctx.lineTo(sheetWidth * CM_TO_PX - 4, posY);
+            ctx.stroke();
+        }
+    }
   }
-
-  // Desenhar régua vertical (esquerda e direita)
-  for (let i = 0; i <= sheetHeight; i += 10) {
-      let posY = i * CM_TO_PX;
-      ctx.beginPath();
-      ctx.moveTo(0, posY);
-      ctx.lineTo(10, posY);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(sheetWidth * CM_TO_PX, posY);
-      ctx.lineTo(sheetWidth * CM_TO_PX - 10, posY);
-      ctx.stroke();
-
-      ctx.fillText(`${i} cm`, 20, posY);
-      ctx.fillText(`${i} cm`, sheetWidth * CM_TO_PX - 20, posY);
-  }
-}
+  
 
 // Função para empacotar o texto dentro do recorte
 function wrapText(ctx, text, x, y, maxWidth) {
